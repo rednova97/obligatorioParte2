@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 
 const int N = 20;
 
@@ -62,15 +63,15 @@ void bajaJugador(char alias[], struct jugadores &jug);      //da de baja un juga
 
 void modificarJugador(char alias[], struct jugadores &jug);     //modifica un jugador
 
-void menuGestionUsuarios(char alias[], struct jugador j, struct jugadores &jug);    //menu de gestion de usuarios
+void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug);    //menu de gestion de usuarios
 
 void menuConsultas();       //menu de las consultas
 
-void menuApuestas(int opcion, int &resultado, int &apuesta, int &saldo, int cantidadAciertos, bool &acertar, bool orgullo);        //menu de las apuestas
+void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x);        //menu de las apuestas
 
 void imprimirTablero(); //procedimiento que imprime el tablero
 
-void seleccionarJugada(int apuesta, int saldo, int &resultado);  //procedimiento para seleccionar la jugada
+void seleccionarJugada(int apuesta, int saldo, int &resultado, int x);  //procedimiento para seleccionar la jugada
 
 void resultadoJugada(int resultado, int opcion, int apuesta, int &saldo, int &cantidadAciertos, bool &acertar);  //actua segun el resultado del procedimiento anterior
 
@@ -78,27 +79,26 @@ void estafa(int opcion, int resultado, int apuesta, int &saldo, int &cantidadAci
 
 void imprimirResultado(int resultado, bool acertar, int saldo);  //imprime el resultado
 
-void juego(int opcion, int &resultado, int &apuesta, int &saldo, int cantidadAciertos, bool &acertar, bool orgullo);    //EL JUEGO
+void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x);    //EL JUEGO
 
 //PROGRAMA PRINCIPAL
 int main()
 {
-    /*struct jugador j;
-    struct jugadores jug;
-    char alias[N];
-
-    crearJugador(j);
-    imprimirJugador(j);
-    altaJugador(alias, j, jug);
-    imprimirTodosJugadores(jug);
-    */
+    
 
     char alias[N];
     struct jugador j;
     struct jugadores jug;
 
-    int seleccion, opcion, resultado, apuesta, saldo, cantidadAciertos;
-    bool acertar, orgullo;
+    int seleccion, resultado, apuesta, saldo, x;
+    bool acertar;
+    
+    srand(time(NULL));
+    x = rand();
+
+    jug.tope = -1;
+    
+    printf("------MENU PRINCIPAL------\n\n1. Gestion de usuarios.\n2. Consultas.\n3. Apuestas.\n4. Salir.\n");
 
     do
     {
@@ -112,7 +112,7 @@ int main()
                 menuConsultas();
                 break;
             case 3:
-                menuApuestas();
+                menuApuestas(resultado, apuesta, saldo, acertar, x);
             default:
                 printf("4. Salir.\n");
         }
@@ -126,7 +126,7 @@ int main()
 
 
 //IMPLEMENTACIONES
-void menuGestionUsuarios(char alias[], struct jugador j, struct jugadores &jug)
+void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug)
 {
     int num;
     do
@@ -137,14 +137,23 @@ void menuGestionUsuarios(char alias[], struct jugador j, struct jugadores &jug)
         scanf("%d", &num);
 
         switch(num) {
-            case 1: altaJugador(alias, j, jug); 
+            case 1: 
+                printf("Cargue los datos de su jugador.\n");
+                crearJugador(j);
+                altaJugador(alias, j, jug); 
                 break;
-            case 2: bajaJugador(alias, jug); 
+            case 2: 
+                printf("Ingrese el alias del jugador que desea dar de baja.\n");
+                scanf("%s", alias);
+                bajaJugador(alias, jug); 
                 break;
-            case 3: modificarJugador(alias, jug); 
+            case 3: 
+                printf("Ingrese el alias del jugador que desea modificar.\n");
+                scanf("%s", alias);
+                modificarJugador(alias, jug); 
                 break;
             case 4: 
-                printf("Volver.\n"); 
+                printf("Volviendo...\n"); 
                 break;
             default: 
                 printf("Opcion invalida.\n");
@@ -165,11 +174,11 @@ void menuConsultas()
         scanf("%d", &num);
 
         switch(num) {
-            case 1: listadoJugadores(); //FALTA HACER
+            case 1: //listadoJugadores(); //FALTA HACER
                 break;
-            case 2: listadoTodasApuestas(); //FALTA HACER
+            case 2: //listadoTodasApuestas(); //FALTA HACER
                 break;
-            case 3: listadoApuestasJugador(); //FALTA HACER
+            case 3: //listadoApuestasJugador(); //FALTA HACER
                 break;
             case 4: 
                 printf("Volver.\n"); 
@@ -181,7 +190,7 @@ void menuConsultas()
     } while(num != 4);
 }
 
-void menuApuestas(int opcion, int &resultado, int &apuesta, int &saldo, int cantidadAciertos, bool &acertar, bool orgullo)
+void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x)
 {
     int num;
     do
@@ -192,7 +201,7 @@ void menuApuestas(int opcion, int &resultado, int &apuesta, int &saldo, int cant
         scanf("%d", &num);
 
         switch(num) {
-            case 1: juego(opcion, resultado, apuesta, saldo, cantidadAciertos, acertar, orgullo); 
+            case 1: juego(resultado, apuesta, saldo, acertar, x); 
                 break;
             case 2:
                 printf("Volver.\n"); 
@@ -228,14 +237,15 @@ int existeAlias(char alias[], struct jugadores jug)
 
 void crearJugador(struct jugador &j)
 {
-    printf("Ingrese su CI: ");
-    scanf("%d", &j.CI);
-    printf("\n");
+    
     printf("Ingrese su nombre, apellido y alias: ");
-    scanf("%s %s %s", &j.nombre, &j.apellido, &j.alias);
+    scanf("%s %s %s", j.nombre, j.apellido, j.alias);
     printf("\n");
     printf("Ingrese su fecha de nacimiento: ");
     scanf("%d %d %d", &j.nacimiento.dia, &j.nacimiento.mes, &j.nacimiento.anio);
+    printf("\n");
+    printf("Ingrese su CI: ");
+    scanf("%ld", &j.CI);
     printf("\n");
     j.activo = true;
     j.saldo = 1000;
@@ -243,7 +253,7 @@ void crearJugador(struct jugador &j)
 
 void imprimirJugador(struct jugador j)
 {
-    printf("CI: %d\n", j.CI);
+    printf("CI: %ld\n", j.CI);
     printf("nombre: %s\n", j.nombre);
     printf("apellido: %s\n", j.apellido);
     printf("alias: %s\n", j.alias);
@@ -265,11 +275,12 @@ void imprimirTodosJugadores(struct jugadores jug)
 
 void altaJugador(char alias[], struct jugador j, struct jugadores &jug)
 {
-    scanf("%s", &alias);
-    if (existeAlias(alias, jug) < jug.tope)
+    int pos = existeAlias(alias, jug);
+    if (pos <= jug.tope)
     {
         printf("Ese alias ya existe.\n");
-        jug.arrJu[existeAlias(alias, jug)].activo = true;
+        jug.arrJu[pos].activo = true;
+        printf("El jugador ha sido dado de alta.\n");
     }
     else
     {
@@ -281,45 +292,41 @@ void altaJugador(char alias[], struct jugador j, struct jugadores &jug)
 
 void bajaJugador(char alias[], struct jugadores &jug)
 {
-    scanf("%s", &alias);
-    if((existeAlias(alias, jug) < jug.tope) && (jug.arrJu[existeAlias(alias, jug)].activo))
+    int pos = existeAlias(alias, jug);    
+    if((pos <= jug.tope) && (jug.arrJu[pos].activo))
     {
-        jug.arrJu[existeAlias(alias, jug)].activo = false;
+        jug.arrJu[pos].activo = false;
         printf("Jugador dado de baja.\n");
     }
     else
-        printf("El jugador ya estaba dado de baja.\n");
+        printf("El jugador ya estaba dado de baja o no ha sido ingresado aun.\n");
 }
 
 void modificarJugador(char alias[], struct jugadores &jug){ 
 	//scanf("%s", &alias);
-	if((existeAlias(alias, jug) <= jug.tope)){
-		
-		int i;
-		/*printf("que datos quieres modificar?\n");
-			printf("1-CI\n2-Nombre\n3-Apellido\n4-Fecha de Nacimiento\n5-Salir\n");
-			scanf("%d",&i);*/
 
-        int e = existeAlias(alias, jug);
+    int pos = existeAlias(alias, jug);
+	if(pos <= jug.tope){
+		int i;
 		do{
-			printf("1-CI\n2-Nombre\n3-Apellido\n4-Fecha de Nacimiento\n5-Salir\n");
+			printf("Digite el numero segun lo que desee hacer: \n\n1-Nombre\n2-Apellido\n3-Fecha de Nacimiento\n4-CI\n5-Salir\n");
 			scanf("%d", &i);
 			switch(i){
 				case 1 :
-					printf("Ingrese nueva cedula:\n");
-					scanf("%d", &jug.arrJu[e].CI);
-					break;
-				case 2 :
 					printf("Ingrese nuevo nombre:\n");
-					scanf("%s", &jug.arrJu[e].nombre);
+					scanf("%s", jug.arrJu[pos].nombre);
 					break;	
-				case 3 :
+				case 2 :
 					printf("Ingrese nuevo apellido:\n");
-					scanf("%s", &jug.arrJu[e].apellido);
+					scanf("%s", jug.arrJu[pos].apellido);
+					break;
+				case 3 :
+					printf("Ingrese nueva fecha de nacimiento");
+					scanf("%d %d %d", &jug.arrJu[pos].nacimiento.dia, &jug.arrJu[pos].nacimiento.mes, &jug.arrJu[pos].nacimiento.anio);
 					break;
 				case 4:
-					printf("Ingrese nueva fecha de nacimiento");
-					scanf("%d %d %d", &jug.arrJu[e].nacimiento.dia, &jug.arrJu[e].nacimiento.mes, &jug.arrJu[e].nacimiento.anio);
+                    printf("Ingrese nueva cedula:\n");
+					scanf("%ld", &jug.arrJu[pos].CI);
 			}	
 			
 		}while(i != 5);
@@ -328,19 +335,18 @@ void modificarJugador(char alias[], struct jugadores &jug){
 	}
 }
 
-void juego(int opcion, int &resultado, int &apuesta, int &saldo, int cantidadAciertos, bool &acertar, bool orgullo){
 
-    int opcion, resultado, apuesta;
+void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x){
+
+    int opcion;
 
     printf("Bienvenido/a, a continuacion comenzaremos a jugar.\n ");
     printf("Para cada jugada debes indicar con un '1', '2', o '3', en qué copa se encuentra la bola. Recuerda que también puedes optar por retirarte indicándolo con un '4'.\n");
     printf("Ahora dime, ¿cuánto dinero tienes disponible?\n");
 
-    int saldo;
-    scanf("%d", &saldo);
+
 
     int cantidadAciertos = 0;
-    bool acertar = false;
     bool orgullo = false;
 
     do {
@@ -352,7 +358,7 @@ void juego(int opcion, int &resultado, int &apuesta, int &saldo, int cantidadAci
             printf("Apuesta?\n");
             scanf("%d", &apuesta);
 
-            seleccionarJugada(apuesta, saldo, resultado);
+            seleccionarJugada(apuesta, saldo, resultado, x);
 
             if (cantidadAciertos < 2)
             {
@@ -386,11 +392,10 @@ void imprimirTablero(){
 }
 
 
-void seleccionarJugada(int apuesta, int saldo, int &resultado){
+void seleccionarJugada(int apuesta, int saldo, int &resultado, int x){
 
     if ((saldo >= apuesta) && (saldo >= 50)){
-        srand(time(NULL));
-        resultado = (rand() % 3) + 1;
+        resultado = (x % 3) + 1;
     }
     else 
         printf("Para jugar hay que pagar amigo.\n");
