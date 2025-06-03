@@ -233,6 +233,7 @@ int existeAlias(char alias[], struct jugadores jug)
 //andres
 //{pepe, juan, ana, pepita, ....}
 //
+//hola
 
 
 void crearJugador(struct jugador &j)
