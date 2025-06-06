@@ -65,9 +65,15 @@ void modificarJugador(char alias[], struct jugadores &jug);     //modifica un ju
 
 void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug);    //menu de gestion de usuarios
 
-void menuConsultas();       //menu de las consultas
+void menuConsultas(struct jugadores jug);       //menu de las consultas
 
 void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x);        //menu de las apuestas
+
+bool AmenorqueB(char a[], char b[]);        //compara dos strings y devuelve si a es menor alfabeticamente que b
+
+void bubbleSort(int n, int indices[], struct jugadores jug);          //ordena dos strings alfabeticamente
+
+void listadoJugadores(struct jugadores jug);                //imprime el listado de jugadores
 
 void imprimirTablero(); //procedimiento que imprime el tablero
 
@@ -109,7 +115,7 @@ int main()
                 menuGestionUsuarios(alias, j, jug);
                 break;
             case 2:
-                menuConsultas();
+                menuConsultas(jug);
                 break;
             case 3:
                 menuApuestas(resultado, apuesta, saldo, acertar, x);
@@ -163,7 +169,7 @@ void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug)
 
 }
 
-void menuConsultas()
+void menuConsultas(struct jugadores jug)
 {
     int num;
     do
@@ -174,7 +180,7 @@ void menuConsultas()
         scanf("%d", &num);
 
         switch(num) {
-            case 1: //listadoJugadores(); //FALTA HACER
+            case 1: listadoJugadores(jug); //FALTA HACER
                 break;
             case 2: //listadoTodasApuestas(); //FALTA HACER
                 break;
@@ -229,11 +235,6 @@ int existeAlias(char alias[], struct jugadores jug)
         i++;
     return i;
 }
-
-//andres
-//{pepe, juan, ana, pepita, ....}
-//
-//hola
 
 
 void crearJugador(struct jugador &j)
@@ -336,6 +337,56 @@ void modificarJugador(char alias[], struct jugadores &jug){
 	}
 }
 
+bool AmenorqueB(char a[], char b[])
+{
+    int i=0;
+    while ((a[i]==b[i]) && (a[i]!='\0') && (b[i]!='\0'))
+        i++;
+    if ((a[i]=='\0') && (b[i]!='\0'))       //si entra a este if es porque ambos strings tienen sus primeras letras iguales y A es mas corto q B
+        return true;    
+    if ((a[i]!='\0') && (b[i]=='\0'))       //si entra a este if es porque ambos strings tienen sus primeras letras iguales y A es mas largo q B
+        return false;          
+    else                                    //si entra a este else es porque ambos strings son igual de largo y entonces hay que fijarse cual va primero alfabeticamente
+        return (a[i] < b[i]);       
+}
+
+void bubbleSort(int n, int indices[], struct jugadores jug)
+{
+    int temp;
+    for(int i = 0; i < n-1; i++)
+        for(int j = 0; j < n-1; j++)
+            if (!AmenorqueB(jug.arrJu[indices[j]].alias, jug.arrJu[indices[j+1]].alias))        //compara dos alias del arreglo de jugadores
+            {
+                temp = indices[j];
+                indices[j] = indices[j+1];
+                indices[j+1] = temp;
+            }
+}
+
+void listadoJugadores(struct jugadores jug)
+{
+    
+    int indices[N];
+    int cantActivos = 0;    //guardaremos la cantidad de jugadores activos
+
+    for (int i=0; i<=jug.tope; i++)     //llenamos el arreglo de indices que luego vamos a usar en bubblesort
+    {
+        if (jug.arrJu[i].activo)
+        {
+            indices[cantActivos] = i;       //guardamos el indice del jugador activo
+            cantActivos++;
+        }
+    }
+
+    bubbleSort(cantActivos, indices, jug);  //ordenamos los alias de los jugadores activos
+
+    for (int i=0; i< cantActivos; i++)
+    {
+        imprimirJugador(jug.arrJu[indices[i]]);
+        printf("\n");
+    }
+    printf("\n");
+}
 
 void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x){
 
