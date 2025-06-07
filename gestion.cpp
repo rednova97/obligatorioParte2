@@ -3,13 +3,27 @@
 #include <time.h>
 #include <stdlib.h>
 
-const int N = 20;
+const int N = 40;
 
 struct fecha        //fecha de nacimiento
 {
     int dia;
     int mes;
     int anio;
+};
+
+struct apuesta      //datos de la apuesta
+{
+    int montoPorApuesta;       
+    int saldoResultante;    //saldo resultante de cada apuesta
+    int saldoActual;        //saldo luego de terminar
+    bool resultado;         //resultado de cada apuestas
+};
+
+struct apuestas     //arreglo de las apuestas
+{
+    struct apuesta arrAp[N];
+    int tope;
 };
 
 struct jugador      //datos del jugador
@@ -20,7 +34,8 @@ struct jugador      //datos del jugador
     char alias[N];
     struct fecha nacimiento;
     bool activo;
-    int saldo;
+    int saldo = 1000;
+    struct apuestas listadoDeApuestas;
 };
 
 struct jugadores    //arreglo de jugadores
@@ -29,24 +44,10 @@ struct jugadores    //arreglo de jugadores
     int tope;
 };
 
-struct apuesta      //datos de la apuesta
-{
-    int valor_apuesta;
-    int saldo;
-    bool resultado;
-    int player[N];
-};
-
-struct apuestas     //arreglo de las apuestas
-{
-    struct apuesta arrAp[N];
-    int tope;
-};
 
 
-//CABEZALES
 
-
+            //CABEZALES
 bool sonIguales(char a[], char b[]);    //funcion que compara dos strings
 
 int existeAlias(char alias[], struct jugadores jug);    //funcion que busca un alias en el arreglo de jugadores y devuelve la posicion valida, si existe
@@ -57,7 +58,7 @@ void imprimirJugador(struct jugador j); //imprime los datos de un jugador
 
 void imprimirTodosJugadores(struct jugadores jug);  //imprime todos los jugadores del arreglo de jugadores
 
-void altaJugador(char alias[], struct jugador j, struct jugadores &jug);    //da de alta un jugador
+void altaJugador(struct jugador j, struct jugadores &jug);    //da de alta un jugador
 
 void bajaJugador(char alias[], struct jugadores &jug);      //da de baja un jugador
 
@@ -65,15 +66,19 @@ void modificarJugador(char alias[], struct jugadores &jug);     //modifica un ju
 
 void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug);    //menu de gestion de usuarios
 
-void menuConsultas(struct jugadores jug);       //menu de las consultas
+void menuConsultas(char alias[], struct jugadores jug);       //menu de las consultas
 
-void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x);        //menu de las apuestas
+void menuApuestas(char alias[], struct jugadores &jug, int &resultado, int &apuesta, int &saldo, bool &acertar, int x);
 
 bool AmenorqueB(char a[], char b[]);        //compara dos strings y devuelve si a es menor alfabeticamente que b
 
 void bubbleSort(int n, int indices[], struct jugadores jug);          //ordena dos strings alfabeticamente
 
 void listadoJugadores(struct jugadores jug);                //imprime el listado de jugadores
+
+void listadoApuestasJugador(char alias[], struct jugadores jug, int pos);    //imprime las apuestas por jugador
+
+void listadoTodasApuestas(struct jugadores jug);        //imprime todas las apuestas de cada jugador
 
 void imprimirTablero(); //procedimiento que imprime el tablero
 
@@ -85,7 +90,7 @@ void estafa(int opcion, int resultado, int apuesta, int &saldo, int &cantidadAci
 
 void imprimirResultado(int resultado, bool acertar, int saldo);  //imprime el resultado
 
-void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x);    //EL JUEGO
+void juego(int x, int pos, struct jugadores &jug);    //EL JUEGO
 
 //PROGRAMA PRINCIPAL
 int main()
@@ -103,22 +108,21 @@ int main()
     x = rand();
 
     jug.tope = -1;
-    
-    printf("------MENU PRINCIPAL------\n\n1. Gestion de usuarios.\n2. Consultas.\n3. Apuestas.\n4. Salir.\n");
 
     do
     {
-        
+        printf("------MENU PRINCIPAL------\n\n1. Gestion de usuarios.\n2. Consultas.\n3. Apuestas.\n4. Salir.\n");
         scanf("%d", &seleccion);
         switch(seleccion){
             case 1:
                 menuGestionUsuarios(alias, j, jug);
                 break;
             case 2:
-                menuConsultas(jug);
+                menuConsultas(alias, jug);
                 break;
             case 3:
-                menuApuestas(resultado, apuesta, saldo, acertar, x);
+                menuApuestas(alias, jug, resultado, apuesta, saldo, acertar, x);
+                break;
             default:
                 printf("4. Salir.\n");
         }
@@ -146,7 +150,7 @@ void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug)
             case 1: 
                 printf("Cargue los datos de su jugador.\n");
                 crearJugador(j);
-                altaJugador(alias, j, jug); 
+                altaJugador(j, jug); 
                 break;
             case 2: 
                 printf("Ingrese el alias del jugador que desea dar de baja.\n");
@@ -169,7 +173,7 @@ void menuGestionUsuarios(char alias[], struct jugador &j, struct jugadores &jug)
 
 }
 
-void menuConsultas(struct jugadores jug)
+void menuConsultas(char alias[], struct jugadores jug)
 {
     int num;
     do
@@ -180,12 +184,22 @@ void menuConsultas(struct jugadores jug)
         scanf("%d", &num);
 
         switch(num) {
-            case 1: listadoJugadores(jug); //FALTA HACER
+            case 1: listadoJugadores(jug);
                 break;
-            case 2: //listadoTodasApuestas(); //FALTA HACER
+            case 2: listadoTodasApuestas(jug); 
                 break;
-            case 3: //listadoApuestasJugador(); //FALTA HACER
+            case 3: 
+            {
+                printf("Ingrese el alias del jugador que desea ver sus apuestas: ");
+                scanf("%s", alias);
+                printf("\n");
+                int pos = existeAlias(alias, jug);
+                if (jug.arrJu[pos].listadoDeApuestas.tope == -1)
+                    printf("Aun no ha jugado.\n");
+                else
+                    listadoApuestasJugador(alias, jug, pos); 
                 break;
+            }
             case 4: 
                 printf("Volver.\n"); 
                 break;
@@ -196,7 +210,7 @@ void menuConsultas(struct jugadores jug)
     } while(num != 4);
 }
 
-void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x)
+void menuApuestas(char alias[], struct jugadores &jug, int &resultado, int &apuesta, int &saldo, bool &acertar, int x)
 {
     int num;
     do
@@ -207,8 +221,20 @@ void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x
         scanf("%d", &num);
 
         switch(num) {
-            case 1: juego(resultado, apuesta, saldo, acertar, x); 
+            case 1:
+            {
+                printf("Ingrese su alias para jugar: ");
+                scanf("%s", alias);
+                int pos = existeAlias(alias, jug);
+                if(pos <= jug.tope)
+                {   
+                    
+                    juego(x, pos, jug); 
+                }
+                else
+                    printf("Ese alias no existe o no se encuentra.\n");
                 break;
+            }
             case 2:
                 printf("Volver.\n"); 
                 break;
@@ -218,7 +244,6 @@ void menuApuestas(int &resultado, int &apuesta, int &saldo, bool &acertar, int x
 
     } while(num != 2);
 }
-
 
 bool sonIguales(char a[], char b[])
 {
@@ -251,6 +276,7 @@ void crearJugador(struct jugador &j)
     printf("\n");
     j.activo = true;
     j.saldo = 1000;
+    j.listadoDeApuestas.tope = -1;
 }
 
 void imprimirJugador(struct jugador j)
@@ -275,20 +301,30 @@ void imprimirTodosJugadores(struct jugadores jug)
     }
 }
 
-void altaJugador(char alias[], struct jugador j, struct jugadores &jug)
+void altaJugador(struct jugador j, struct jugadores &jug)
 {
-    int pos = existeAlias(alias, jug);
+    int pos = existeAlias(j.alias, jug);
     if (pos <= jug.tope)
     {
         printf("Ese alias ya existe.\n");
-        jug.arrJu[pos].activo = true;
-        printf("El jugador ha sido dado de alta.\n");
+        if (!jug.arrJu[pos].activo)
+        {
+            jug.arrJu[pos].activo = true;
+            printf("El jugador ha sido dado de alta (anteriormente inactivo).\n");
+        }
+        else
+            printf("El jugador ya existe y esta activo. No se realizo ningun cambio.\n");
     }
     else
     {
-        jug.tope++;
-        jug.arrJu[jug.tope] = j;
-        printf("Nuevo jugador ingresado.\n");
+        if (jug.tope < N - 1)                   // controlar si hay espacio en el arreglo
+        {         
+            jug.tope++;
+            jug.arrJu[jug.tope] = j;
+            printf("Nuevo jugador ingresado.\n");
+        } else {
+            printf("No hay espacio para mas jugadores.\n");
+        }
     }
 }
 
@@ -388,18 +424,49 @@ void listadoJugadores(struct jugadores jug)
     printf("\n");
 }
 
-void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x){
+void listadoApuestasJugador(char alias[], struct jugadores jug, int pos)
+{
+
+    if (pos > jug.tope)
+        printf("Ese alias no existe.\n");
+    else
+    {
+        printf("%s\n", jug.arrJu[pos].alias);
+        for (int j=0; j<=jug.arrJu[pos].listadoDeApuestas.tope; j++)
+        {
+            printf("Aposto: %d\n", jug.arrJu[pos].listadoDeApuestas.arrAp[j].montoPorApuesta);
+            if(jug.arrJu[pos].listadoDeApuestas.arrAp[j].resultado)
+                printf("Acerto jugada.\n");
+            else
+                printf("No acerto.\n");
+            printf("Saldo resultante: %d\n", jug.arrJu[pos].listadoDeApuestas.arrAp[j].saldoResultante);
+        }
+        printf("Saldo actual: %d\n", jug.arrJu[pos].listadoDeApuestas.arrAp[jug.arrJu[pos].listadoDeApuestas.tope].saldoActual);
+        printf("\n");
+    }
+    
+}
+
+void listadoTodasApuestas(struct jugadores jug)
+{
+    for (int i=0; i<= jug.tope; i++)
+        listadoApuestasJugador(jug.arrJu[i].alias, jug, i);
+    printf("\n");
+}
+
+void juego(int x, int pos, struct jugadores &jug)
+{
 
     int opcion;
 
     printf("Bienvenido/a, a continuacion comenzaremos a jugar.\n ");
-    printf("Para cada jugada debes indicar con un '1', '2', o '3', en qué copa se encuentra la bola. Recuerda que también puedes optar por retirarte indicándolo con un '4'.\n");
-    printf("Ahora dime, ¿cuánto dinero tienes disponible?\n");
-
-
+    printf("Para cada jugada debes indicar con un '1', '2', o '3', en qué copa se encuentra la bola. Recuerda que tambien puedes optar por retirarte indicandolo con un '4'.\n");
 
     int cantidadAciertos = 0;
+    bool acertar;
+    int apuesta, resultado;
     bool orgullo = false;
+
 
     do {
         imprimirTablero();
@@ -410,39 +477,45 @@ void juego(int &resultado, int &apuesta, int &saldo, bool &acertar, int x){
             printf("Apuesta?\n");
             scanf("%d", &apuesta);
 
-            seleccionarJugada(apuesta, saldo, resultado, x);
+            seleccionarJugada(apuesta, jug.arrJu[pos].saldo, resultado, x);
 
             if (cantidadAciertos < 2)
             {
-                resultadoJugada(resultado, opcion, apuesta, saldo, cantidadAciertos, acertar);
-                imprimirResultado(resultado, acertar, saldo);
+                resultadoJugada(resultado, opcion, apuesta, jug.arrJu[pos].saldo, cantidadAciertos, acertar);
+                imprimirResultado(resultado, acertar, jug.arrJu[pos].saldo);
             }
             else 
             {
-                estafa(opcion, resultado, apuesta, saldo, cantidadAciertos, acertar);
-                imprimirResultado(resultado, acertar, saldo);
+                estafa(opcion, resultado, apuesta, jug.arrJu[pos].saldo, cantidadAciertos, acertar);
+                imprimirResultado(resultado, acertar, jug.arrJu[pos].saldo);
             }
 
             orgullo = ((apuesta > 200) && !acertar);
 
+            
+            jug.arrJu[pos].listadoDeApuestas.tope++;
+            int i = jug.arrJu[pos].listadoDeApuestas.tope;
+            jug.arrJu[pos].listadoDeApuestas.arrAp[i].montoPorApuesta = apuesta;
+            jug.arrJu[pos].listadoDeApuestas.arrAp[i].resultado = acertar;
+            jug.arrJu[pos].listadoDeApuestas.arrAp[i].saldoResultante = jug.arrJu[pos].saldo;
+            jug.arrJu[pos].listadoDeApuestas.arrAp[i].saldoActual = jug.arrJu[pos].saldo;
+
         }
 
-    } while (((opcion != 4) || orgullo) && saldo >= 50);
+    } while (((opcion != 4) || orgullo) && jug.arrJu[pos].saldo >= 50);
 
     if (opcion == 4)
-        printf("Nos vemos la proxima.");
-    else if (saldo < 50)
-        printf("Para jugar hay que pagar amigo.");
+        printf("Nos vemos la proxima.\n");
+    else if (jug.arrJu[pos].saldo < 50)
+        printf("Para jugar hay que pagar amigo.\n");
 
 }
-
 
 void imprimirTablero(){
     printf("O O O\n");
     printf("1 2 3\n");
     printf("Copa?:\n");
 }
-
 
 void seleccionarJugada(int apuesta, int saldo, int &resultado, int x){
 
@@ -453,7 +526,6 @@ void seleccionarJugada(int apuesta, int saldo, int &resultado, int x){
         printf("Para jugar hay que pagar amigo.\n");
 
 }
-
 
 void resultadoJugada(int resultado, int opcion, int apuesta, int &saldo, int &cantidadAciertos, bool &acertar){
     if ((opcion == resultado) && (cantidadAciertos < 2)){
@@ -468,14 +540,12 @@ void resultadoJugada(int resultado, int opcion, int apuesta, int &saldo, int &ca
     }
 }
 
-
 void estafa(int opcion, int resultado, int apuesta, int &saldo, int &cantidadAciertos, bool &acertar){
     acertar = false;
     cantidadAciertos = 0;
     resultado = (opcion % 3) + 1;
     saldo = saldo - apuesta;
 }
-
 
 void imprimirResultado(int resultado, bool acertar, int saldo){
     switch(resultado){
@@ -495,7 +565,7 @@ void imprimirResultado(int resultado, bool acertar, int saldo){
 }
 
 
-//bubbleSort(int arr[], int n)
+
 
 
 
