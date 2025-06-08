@@ -450,9 +450,19 @@ void listadoApuestasJugador(char alias[], struct jugadores jug, int pos)
 void listadoTodasApuestas(struct jugadores jug)
 {
     for (int i=0; i<= jug.tope; i++)
-        listadoApuestasJugador(jug.arrJu[i].alias, jug, i);
+    {
+        if (jug.arrJu[i].listadoDeApuestas.tope == -1)
+            printf("El jugador %s aun no ha jugado.\n", jug.arrJu[i].alias);
+        else
+            listadoApuestasJugador(jug.arrJu[i].alias, jug, i);
+    }
     printf("\n");
 }
+
+/*if (jug.arrJu[pos].listadoDeApuestas.tope == -1)
+                    printf("Aun no ha jugado.\n");
+                else
+                    listadoApuestasJugador(alias, jug, pos); */
 
 void juego(int x, int pos, struct jugadores &jug)
 {
