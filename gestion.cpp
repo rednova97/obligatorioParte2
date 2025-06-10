@@ -52,6 +52,10 @@ bool sonIguales(char a[], char b[]);    //funcion que compara dos strings
 
 int existeAlias(char alias[], struct jugadores jug);    //funcion que busca un alias en el arreglo de jugadores y devuelve la posicion valida, si existe
 
+bool fechaValida(int dia, int mes, int anio); // valida la fecha 
+
+bool cedulaValida(long int cedula); // valida la cedula 
+
 void crearJugador(struct jugador &j);   //carga un jugador con sus datos personales
 
 void imprimirJugador(struct jugador j); //imprime los datos de un jugador
@@ -270,9 +274,19 @@ void crearJugador(struct jugador &j)
     printf("\n");
     printf("Ingrese su fecha de nacimiento: ");
     scanf("%d %d %d", &j.nacimiento.dia, &j.nacimiento.mes, &j.nacimiento.anio);
+    while (!fechaValida(j.nacimiento.dia, j.nacimiento.mes, j.nacimiento.anio) )
+    {
+        printf("Ingrese una fecha valida\n");
+        scanf("%d %d %d", &j.nacimiento.dia, &j.nacimiento.mes, &j.nacimiento.anio);
+    }
     printf("\n");
     printf("Ingrese su CI: ");
     scanf("%ld", &j.CI);
+    while (!cedulaValida(j.CI))
+    {
+        printf("Ingrese una cedula valida\n");
+        scanf("%ld", &j.CI);
+    }
     printf("\n");
     j.activo = true;
     j.saldo = 1000;
@@ -299,6 +313,49 @@ void imprimirTodosJugadores(struct jugadores jug)
             printf("\n");
         }
     }
+}
+
+bool fechaValida(int dia, int mes, int anio)
+{
+    if((anio > 2025) || (anio) < 1900)
+        return false;
+    else if((mes < 1) || (mes) > 12)
+        return false;
+    else if ((dia > 31) || (dia <1))
+        return false;
+    else 
+    {
+        switch (mes)
+        {
+            case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+                return true;
+                break;
+            case 4: case 6: case 9: case 11:
+                if(dia <= 30)
+                    return true;
+                else
+                    return false;
+                break;
+            case 2: 
+                if(dia > 29)
+                    return false;
+                else 
+                    if(((anio % 4 == 0 && anio % 100 != 0) || (anio % 400 == 0)))
+                    return true;
+                else if(dia == 29)
+                    return false;
+                else
+                    return true;
+        }
+    }
+}
+
+bool cedulaValida(long int cedula)
+{
+    if((cedula >= 10000000) && (cedula<= 99999999))
+        return true;
+    else
+        return false;
 }
 
 void altaJugador(struct jugador j, struct jugadores &jug)
@@ -458,11 +515,6 @@ void listadoTodasApuestas(struct jugadores jug)
     }
     printf("\n");
 }
-
-/*if (jug.arrJu[pos].listadoDeApuestas.tope == -1)
-                    printf("Aun no ha jugado.\n");
-                else
-                    listadoApuestasJugador(alias, jug, pos); */
 
 void juego(int x, int pos, struct jugadores &jug)
 {
